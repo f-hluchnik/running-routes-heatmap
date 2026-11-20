@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install the package with test dependencies
+        run: pip install -e ".[dev,e2e]"
+
+      - name: Install Chromium for the browser tests
+        run: playwright install --with-deps chromium
+
+      - name: Lint
+        run: |
+          ruff check .
+          ruff format --check .
+
+      # Runs the Python unit tests, the JavaScript unit tests (node --test)
+      # and the browser tests.
+      - name: Test
+        run: pytest

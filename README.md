@@ -1,5 +1,7 @@
 # Running routes heatmap
 
+[![CI](https://github.com/f-hluchnik/running-routes-heatmap/actions/workflows/ci.yml/badge.svg)](https://github.com/f-hluchnik/running-routes-heatmap/actions/workflows/ci.yml)
+
 Turn the GPX files of your runs into an interactive map you can explore and export as PNG.
 
 - **Glow view** – every run is a semi-transparent line; streets you run often pile up to solid colour.
