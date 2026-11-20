@@ -21,6 +21,7 @@ session or contributor can pick up from here.
 | [RH-013](RH-013-hover-details.md) | Run details on hover | Done |
 | [RH-014](RH-014-basemap-choice.md) | Basemap style choice + CLI tile options | Done |
 | [RH-015](RH-015-export-options.md) | Export options | Done |
+| [RH-016](RH-016-sample-data-screenshots.md) | Synthetic sample data + README screenshots | Done |
 
 Backlog (not scheduled): see [BACKLOG.md](BACKLOG.md).
 

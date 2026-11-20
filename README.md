@@ -9,6 +9,15 @@ Turn the GPX files of your runs into an interactive map you can explore and expo
 - **Hover details** – point at a route to see which runs (name, date, distance) ran there.
 - **Export PNG** – the current view or all shown runs, 1x–4x resolution, optional transparent background; includes the legend and the basemap credit.
 
+![Glow view: every run is a semi-transparent line](docs/images/glow.png)
+![Frequency view: streets coloured by how many runs used them](docs/images/frequency.png)
+
+The screenshots show [synthetic sample data](examples/sample-data) (a made-up street grid), so no real routes are published. Try it yourself:
+
+```bash
+running-heatmap examples/sample-data --serve
+```
+
 The result is a single HTML file that works offline (only the optional basemap tiles need the internet).
 
 ## Quick start
@@ -83,6 +92,8 @@ pytest          # Python + JavaScript (node) unit tests; browser tests run if Pl
 ruff check . && ruff format --check .
 
 pip install -e ".[e2e]" && playwright install chromium   # enable the browser tests
+python scripts/make_screenshots.py                          # refresh docs/images
+python scripts/make_sample_data.py                          # regenerate the sample runs
 ```
 
 Map data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors. Leaflet is bundled under its BSD-2-Clause licence (`src/running_heatmap/web/vendor/LICENSE-leaflet`).

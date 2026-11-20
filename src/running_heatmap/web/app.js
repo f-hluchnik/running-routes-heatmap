@@ -29,7 +29,7 @@ let scene = buildScene(data, (runIndex) => runFilter.isVisible(runIndex));
 /* ---- Map ---------------------------------------------------------------- */
 
 const map = L.map("map", { zoomSnap: 0.25, zoomAnimation: false, attributionControl: false });
-map.fitBounds(data.bounds, { padding: [40, 40] });
+fitDataInView();
 L.control.attribution({ prefix: false }).addTo(map);
 
 const tileLayers = {}; // created on first use, by basemap id
@@ -41,6 +41,14 @@ const routesLayer = new RoutesLayer((ctx, frame) => {
   VIEWS[state.view].draw(ctx, frame, scene, state);
   if (hoveredRuns.length > 0) drawHighlight(ctx, frame, scene, hoveredRuns[0], state);
 }).addTo(map);
+
+/** Fit all routes into the map, leaving room for the control panel beside them. */
+function fitDataInView() {
+  const panel = $("panel");
+  const wideScreen = map.getSize().x > 700;
+  const panelSpace = wideScreen ? panel.offsetWidth + 16 : 0;
+  map.fitBounds(data.bounds, { paddingTopLeft: [40, 40], paddingBottomRight: [40 + panelSpace, 40] });
+}
 
 /* ---- Keeping the page in sync with the state ----------------------------- */
 
