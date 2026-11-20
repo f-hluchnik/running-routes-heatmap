@@ -4,7 +4,7 @@ Turn the GPX files of your runs into an interactive map you can explore and expo
 
 - **Glow view** – every run is a semi-transparent line; streets you run often pile up to solid colour.
 - **Frequency view** – streets coloured by how many *different* runs used them (legend included).
-- **Optional OpenStreetMap basemap** – on or off with one checkbox.
+- **Optional basemap** – none (default), or OpenStreetMap in muted, dark or original colours; bring your own tile provider with `--tiles`.
 - **Filters** – switch single runs on or off, or limit them to a date range; the frequency colours are recounted for what remains.
 - **Hover details** – point at a route to see which runs (name, date, distance) ran there.
 - **Export PNG** – saves exactly what you see (2x resolution, with legend and the OSM credit if the basemap is on).
@@ -24,6 +24,18 @@ running-heatmap --serve
 `--serve` builds `output/heatmap.html`, serves it on <http://127.0.0.1:8000> and opens your browser.
 Serving it (instead of double-clicking the file) is what lets OpenStreetMap tiles load, because their servers expect an HTTP referrer.
 
+### Other tile providers
+
+OpenStreetMap tiles work without any account. Other providers usually need an API key, for example [CARTO's basemaps](https://carto.com/basemaps/apikey/) (free tier). Put the key in the URL:
+
+```bash
+running-heatmap --serve \
+  --tiles "https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png?key=YOUR_KEY" \
+  --tiles-attribution "© OpenStreetMap contributors © CARTO"
+```
+
+The generated HTML contains that URL, including the key; do not publish it if the key is private.
+
 ### Options
 
 | Option | Default | Meaning |
@@ -33,6 +45,7 @@ Serving it (instead of double-clicking the file) is what lets OpenStreetMap tile
 | `--cell-size METRES` | `10` | how close two runs must be to count as the same street; raise it if GPS noise splits one street into two |
 | `--trim-ends METRES` | `0` | hide the start and end of every run, e.g. `--trim-ends 300` to keep your home out of the picture |
 | `--sport NAME` | `running` | only use activities of this sport (`any` for all); applies to `.fit` files, GPX files do not state a sport |
+| `--tiles URL`, `--tiles-attribution TEXT` | none | add a custom basemap, e.g. a provider's `https://.../{z}/{x}/{y}.png?key=...` URL (supports `{s}`, `{r}`); the credit is required and shown on the map and in PNGs |
 | `--serve`, `--port` | off, `8000` | serve the page locally and open it |
 
 ## Getting your data from Garmin

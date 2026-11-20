@@ -19,6 +19,7 @@ session or contributor can pick up from here.
 | [RH-011](RH-011-frequency-in-browser.md) | Frequency analysis in the browser | Done |
 | [RH-012](RH-012-run-filter.md) | Date range and per-run filter | Done |
 | [RH-013](RH-013-hover-details.md) | Run details on hover | Done |
+| [RH-014](RH-014-basemap-choice.md) | Basemap style choice + CLI tile options | Done |
 
 Backlog (not scheduled): see [BACKLOG.md](BACKLOG.md).
 

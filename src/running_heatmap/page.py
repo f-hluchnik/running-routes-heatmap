@@ -14,6 +14,7 @@ _STYLES = ("vendor/leaflet.css", "app.css")
 _SCRIPTS = (
     "vendor/leaflet.js",
     "projection.js",
+    "basemaps.js",
     "data.js",
     "frequency.js",
     "scene.js",

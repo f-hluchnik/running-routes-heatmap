@@ -9,6 +9,7 @@ import numpy as np
 
 from .geometry import LocalProjection, clean_path, path_length, trim_ends
 from .model import Run
+from .tiles import TileSource
 
 MAX_STEP = 5.0  # metres; finer sampling gives smoother colour changes along a route
 COORDINATE_DECIMALS = 5  # ~1 m; plenty for a map and keeps the page small
@@ -51,6 +52,7 @@ class Dataset:
 
     runs: list[RunRoutes]
     cell_size: float  # metres; two runs closer than this count as the same street
+    tiles: TileSource | None = None  # optional custom basemap offered in the UI
 
     @property
     def bounds(self) -> list[list[float]]:
@@ -63,6 +65,9 @@ class Dataset:
         payload = {
             "bounds": self.bounds,
             "cellSize": self.cell_size,
+            "tiles": {"url": self.tiles.url, "attribution": self.tiles.attribution}
+            if self.tiles
+            else None,
             "runs": [
                 {
                     "name": run.name,
@@ -78,7 +83,9 @@ class Dataset:
         return json.dumps(payload, separators=(",", ":"), ensure_ascii=False)
 
 
-def build_dataset(runs: list[Run], settings: Settings | None = None) -> Dataset:
+def build_dataset(
+    runs: list[Run], settings: Settings | None = None, tiles: TileSource | None = None
+) -> Dataset:
     """Clean every run's geometry (projected, de-jittered, evenly sampled, trimmed).
 
     Raises ``ValueError`` if no run has any distance left to draw.
@@ -99,7 +106,7 @@ def build_dataset(runs: list[Run], settings: Settings | None = None) -> Dataset:
     ]
     if not run_routes:
         raise ValueError("No run has any distance to draw")
-    return Dataset(run_routes, settings.cell_size)
+    return Dataset(run_routes, settings.cell_size, tiles)
 
 
 def _clean_run(

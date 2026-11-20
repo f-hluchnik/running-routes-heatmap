@@ -2,23 +2,19 @@
 
 /* ---- Configuration ------------------------------------------------------ */
 
-const OSM_TILES = {
-  url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-};
-
 const HOVER_TOLERANCE_PX = 8; // how close the pointer must be to a route
 const MAX_TOOLTIP_RUNS = 5;
 
 const BACKGROUND = "#14161a";
-const BASEMAP_FILTER = "grayscale(0.85) brightness(1.05) contrast(0.92)"; // calms OSM colours
 
 /* ---- State -------------------------------------------------------------- */
 
 const $ = (id) => document.getElementById(id);
 
-const state = { view: "glow", basemap: false, width: 3, opacity: 0.5 };
-const data = loadDataset(JSON.parse($("heatmap-data").textContent));
+const state = { view: "glow", basemap: "none", width: 3, opacity: 0.5 };
+const dataJson = JSON.parse($("heatmap-data").textContent);
+const data = loadDataset(dataJson);
+const basemaps = buildBasemaps(dataJson.tiles);
 const runFilter = new RunFilter(data.runs);
 let scene = buildScene(data, (runIndex) => runFilter.isVisible(runIndex));
 
@@ -26,14 +22,9 @@ let scene = buildScene(data, (runIndex) => runFilter.isVisible(runIndex));
 
 const map = L.map("map", { zoomSnap: 0.25, zoomAnimation: false, attributionControl: false });
 map.fitBounds(data.bounds, { padding: [40, 40] });
-map.getPane("tilePane").style.filter = BASEMAP_FILTER;
 L.control.attribution({ prefix: false }).addTo(map);
 
-const basemap = L.tileLayer(OSM_TILES.url, {
-  attribution: OSM_TILES.attribution,
-  maxZoom: 19,
-  crossOrigin: "anonymous", // lets the PNG export read the tiles
-});
+const tileLayers = {}; // created on first use, by basemap id
 
 let hoveredRuns = []; // run indexes under the pointer, nearest first; shown on screen only
 
@@ -63,9 +54,21 @@ function refresh() {
   const view = VIEWS[state.view];
   $("opacity-row").hidden = !view.usesOpacity;
   $("legend").hidden = !view.hasLegend;
-  if (state.basemap) basemap.addTo(map);
-  else basemap.remove();
   routesLayer.redraw();
+}
+
+/** Show the selected basemap (or none) and apply its colour filter. */
+function applyBasemap() {
+  Object.values(tileLayers).forEach((layer) => layer.remove());
+  const basemap = basemaps[state.basemap];
+  map.getPane("tilePane").style.filter = basemap.filter ?? "";
+  if (!basemap.url) return;
+  tileLayers[state.basemap] ??= L.tileLayer(basemap.url, {
+    attribution: basemap.attribution.html,
+    maxZoom: 19,
+    crossOrigin: "anonymous", // lets the PNG export read the tiles
+  });
+  tileLayers[state.basemap].addTo(map);
 }
 
 /* ---- Controls ----------------------------------------------------------- */
@@ -138,9 +141,12 @@ function bindControls() {
   $("width").value = state.width;
   $("opacity").value = state.opacity;
 
+  for (const [id, basemap] of Object.entries(basemaps)) {
+    $("basemap").append(new Option(basemap.label, id));
+  }
   $("basemap").addEventListener("change", (event) => {
-    state.basemap = event.target.checked;
-    refresh();
+    state.basemap = event.target.value;
+    applyBasemap();
   });
   $("width").addEventListener("input", (event) => {
     state.width = Number(event.target.value);
@@ -221,13 +227,12 @@ async function exportCurrentView(event) {
       {
         scale: EXPORT_SCALE,
         background: BACKGROUND,
-        basemap: state.basemap,
-        filter: BASEMAP_FILTER,
+        basemap: state.basemap === "none" ? null : basemaps[state.basemap],
         view: VIEWS[state.view],
         scene,
         style: state,
       },
-      `running-heatmap-${state.view}${state.basemap ? "-osm" : ""}.png`,
+      `running-heatmap-${state.view}${state.basemap === "none" ? "" : `-${state.basemap}`}.png`,
     );
     showStatus("");
   } catch (error) {

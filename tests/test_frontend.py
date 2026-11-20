@@ -9,10 +9,12 @@ import pytest
 from running_heatmap.dataset import build_dataset
 from running_heatmap.gpx_io import load_run
 from running_heatmap.page import render_page
+from running_heatmap.tiles import TileSource
 
 sync_api = pytest.importorskip("playwright.sync_api")
 
 VIEWPORT = {"width": 900, "height": 600}
+CUSTOM_TILE_HOST = "https://tiles.example.test"
 EAST = [(16.60 + i * 0.0005, 49.2) for i in range(32)]
 NORTH_EAST = [(16.60 + i * 0.0005, 49.2 + i * 0.0001) for i in range(32)]
 # 1x1 transparent-ish PNG standing in for an OpenStreetMap tile.
@@ -33,30 +35,44 @@ def browser():
         instance.close()
 
 
-@pytest.fixture
-def page(browser, tmp_path_factory, write_gpx):
+def open_page(browser, tmp_path_factory, write_gpx, *, tiles: TileSource | None = None):
+    """Build the page for two overlapping runs and open it with OSM and custom tiles mocked."""
     runs = [load_run(write_gpx("a.gpx", EAST)), load_run(write_gpx("b.gpx", NORTH_EAST))]
     html = tmp_path_factory.mktemp("site") / "map.html"
-    html.write_text(render_page(build_dataset(runs)), encoding="utf-8")
+    html.write_text(render_page(build_dataset(runs, tiles=tiles)), encoding="utf-8")
 
     context = browser.new_context(viewport=VIEWPORT, accept_downloads=True)
-    context.route(
-        "https://tile.openstreetmap.org/**",
-        lambda route: route.fulfill(
-            body=TILE,
-            content_type="image/png",
-            headers={"Access-Control-Allow-Origin": "*"},
-        ),
-    )
+    for pattern in ("https://tile.openstreetmap.org/**", f"{CUSTOM_TILE_HOST}/**"):
+        context.route(
+            pattern,
+            lambda route: route.fulfill(
+                body=TILE, content_type="image/png", headers={"Access-Control-Allow-Origin": "*"}
+            ),
+        )
     tab = context.new_page()
-    errors: list[str] = []
-    tab.on("pageerror", lambda error: errors.append(str(error)))
+    tab.errors = []
+    tab.on("pageerror", lambda error: tab.errors.append(str(error)))
     tab.goto(html.as_uri())
     tab.wait_for_selector("canvas.routes-canvas")
     tab.wait_for_timeout(200)
+    return context, tab
+
+
+@pytest.fixture
+def page(browser, tmp_path_factory, write_gpx):
+    context, tab = open_page(browser, tmp_path_factory, write_gpx)
     yield tab
     context.close()
-    assert errors == []
+    assert tab.errors == []
+
+
+@pytest.fixture
+def page_with_custom_tiles(browser, tmp_path_factory, write_gpx):
+    tiles = TileSource(f"{CUSTOM_TILE_HOST}/{{z}}/{{x}}/{{y}}.png", "© Example <b>Maps</b>")
+    context, tab = open_page(browser, tmp_path_factory, write_gpx, tiles=tiles)
+    yield tab
+    context.close()
+    assert tab.errors == []
 
 
 def painted_pixels(page) -> int:
@@ -93,26 +109,55 @@ def test_frequency_view_shows_legend_and_hides_opacity(page):
     assert not page.is_visible("#opacity-row")
 
 
-def test_basemap_toggle_adds_and_removes_tiles(page):
-    page.check("#basemap")
+@pytest.mark.parametrize("basemap", ["osm-muted", "osm-dark", "osm-original"])
+def test_basemap_choice_adds_and_removes_tiles(page, basemap):
+    page.select_option("#basemap", basemap)
     page.wait_for_selector("img.leaflet-tile-loaded")
     assert "OpenStreetMap" in page.inner_text(".leaflet-control-attribution")
 
-    page.uncheck("#basemap")
+    page.select_option("#basemap", "none")
     assert page.locator("img.leaflet-tile").count() == 0
 
 
-@pytest.mark.parametrize("basemap", [False, True])
+def test_basemap_styles_differ_only_by_filter(page):
+    filter_of = "document.querySelector('.leaflet-tile-pane').style.filter"
+    page.select_option("#basemap", "osm-muted")
+    muted = page.evaluate(filter_of)
+    page.select_option("#basemap", "osm-dark")
+    dark = page.evaluate(filter_of)
+    page.select_option("#basemap", "osm-original")
+
+    assert "grayscale" in muted
+    assert "invert" in dark
+    assert page.evaluate(filter_of) == ""
+
+
+def test_there_is_no_custom_basemap_unless_tiles_were_given(page):
+    assert page.locator("#basemap option[value=custom]").count() == 0
+
+
+def test_custom_tiles_are_offered_and_credited_safely(page_with_custom_tiles):
+    page = page_with_custom_tiles
+
+    page.select_option("#basemap", "custom")
+    page.wait_for_selector("img.leaflet-tile-loaded")
+
+    attribution = page.inner_text(".leaflet-control-attribution")
+    assert "Example <b>Maps</b>" in attribution  # shown as text, not interpreted as HTML
+    assert page.locator(".leaflet-control-attribution b").count() == 0
+    assert "tiles.example.test" in page.get_attribute("img.leaflet-tile", "src")
+
+
+@pytest.mark.parametrize("basemap", ["none", "osm-dark"])
 def test_png_export_is_twice_the_viewport(page, tmp_path, basemap):
-    if basemap:
-        page.check("#basemap")
+    page.select_option("#basemap", basemap)
     with page.expect_download() as download:
         page.click("#export")
     target = tmp_path / "export.png"
     download.value.save_as(target)
 
     assert png_size(target) == (VIEWPORT["width"] * 2, VIEWPORT["height"] * 2)
-    assert ("-osm" in download.value.suggested_filename) is basemap
+    assert (basemap in download.value.suggested_filename) is (basemap != "none")
 
 
 def test_run_filter_recounts_frequencies_and_updates_the_summary(page):

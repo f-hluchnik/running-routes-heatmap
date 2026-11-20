@@ -68,7 +68,7 @@ function drawLegend(ctx, scale, scene, canvasHeight) {
   ctx.restore();
 }
 
-/** OpenStreetMap's licence requires this credit wherever its tiles are shown. */
+/** Tile providers' licences require this credit wherever their tiles are shown. */
 function drawAttribution(ctx, scale, canvasWidth, canvasHeight) {
   const text = "© OpenStreetMap contributors";
   ctx.save();
@@ -86,7 +86,7 @@ function drawAttribution(ctx, scale, canvasWidth, canvasHeight) {
 
 /**
  * Paint the map as it is currently shown onto a new canvas.
- * `options`: { scale, background, basemap (bool), filter, view, scene, style }
+ * `options`: { scale, background, basemap (an entry of `basemaps`, or null), view, scene, style }
  */
 async function renderExportCanvas(map, options) {
   const size = map.getSize();
@@ -101,11 +101,13 @@ async function renderExportCanvas(map, options) {
 
   if (options.basemap) {
     await waitForTiles(map);
-    drawTiles(ctx, map, scale, options.filter);
+    drawTiles(ctx, map, scale, options.basemap.filter);
   }
   options.view.draw(ctx, frameFromMap(map, scale), options.scene, options.style);
   if (options.view.hasLegend) drawLegend(ctx, scale, options.scene, canvas.height);
-  if (options.basemap) drawAttribution(ctx, scale, canvas.width, canvas.height);
+  if (options.basemap) {
+    drawAttribution(ctx, options.basemap.attribution.text, scale, canvas.width, canvas.height);
+  }
   return canvas;
 }
 
