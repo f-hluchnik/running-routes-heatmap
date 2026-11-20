@@ -18,23 +18,15 @@ def runs_from(write_gpx, *tracks):
     ]
 
 
-def test_dataset_reports_distance_date_and_frequency(write_gpx):
-    dataset = build_dataset(runs_from(write_gpx, EAST, EAST))
+def test_dataset_reports_name_date_distance_and_cell_size(write_gpx):
+    dataset = build_dataset(runs_from(write_gpx, EAST, NORTH), Settings(cell_size=12.0))
 
     first = dataset.runs[0]
-    assert first.name == "run 0"
-    assert first.date == "2025-08-11"
+    assert (first.name, first.date) == ("run 0", "2025-08-11")
     assert first.distance_km == pytest.approx(1.13, abs=0.03)
-    assert set(first.routes[0].frequency) == {2}
-    assert dataset.max_frequency == 2
-
-
-def test_runs_going_different_ways_have_frequency_one_except_near_the_shared_corner(write_gpx):
-    dataset = build_dataset(runs_from(write_gpx, EAST, NORTH))
-
-    freq = dataset.runs[0].routes[0].frequency
-    assert freq[0] == 2  # both runs start at the same point
-    assert freq[-1] == 1
+    assert len(first.routes) == 1
+    assert dataset.cell_size == 12.0
+    assert len(dataset.runs) == 2
 
 
 def test_json_is_compact_and_complete(write_gpx):
@@ -42,22 +34,20 @@ def test_json_is_compact_and_complete(write_gpx):
 
     payload = json.loads(dataset.to_json())
 
-    route = payload["runs"][0]["routes"][0]
-    assert len(route["freq"]) == len(route["coords"]) - 1
-    lat, lon = route["coords"][0]
+    lat, lon = payload["runs"][0]["routes"][0][0]
     assert (lat, lon) == pytest.approx((49.2, 16.6), abs=1e-4)
     (south, west), (north, east) = payload["bounds"]
     assert south <= lat <= north
     assert west <= lon <= east
-    assert payload["maxFrequency"] == 1
+    assert payload["cellSize"] == 10.0
     assert " " not in dataset.to_json().split('"name"')[0]  # separators are compact
 
 
 def test_trim_ends_shortens_routes(write_gpx):
     runs = runs_from(write_gpx, EAST)
 
-    full = build_dataset(runs).runs[0].routes[0].coords
-    trimmed = build_dataset(runs, Settings(trim_ends=200.0)).runs[0].routes[0].coords
+    full = build_dataset(runs).runs[0].routes[0]
+    trimmed = build_dataset(runs, Settings(trim_ends=200.0)).runs[0].routes[0]
 
     assert len(trimmed) < len(full)
     assert trimmed[:, 1].min() > full[:, 1].min()

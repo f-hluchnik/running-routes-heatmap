@@ -39,7 +39,7 @@ function drawTiles(ctx, map, scale, filter) {
   ctx.restore();
 }
 
-function drawLegend(ctx, scale, data, canvasHeight) {
+function drawLegend(ctx, scale, scene, canvasHeight) {
   const width = 180 * scale;
   const height = 52 * scale;
   const x = 16 * scale;
@@ -64,7 +64,7 @@ function drawLegend(ctx, scale, data, canvasHeight) {
   ctx.fillText("RUNS PER STREET", x + 12 * scale, y + 20 * scale);
   ctx.fillText("1", x + 12 * scale, y + 46 * scale);
   ctx.textAlign = "right";
-  ctx.fillText(String(data.maxFrequency), x + width - 12 * scale, y + 46 * scale);
+  ctx.fillText(String(scene.maxFrequency), x + width - 12 * scale, y + 46 * scale);
   ctx.restore();
 }
 
@@ -86,7 +86,7 @@ function drawAttribution(ctx, scale, canvasWidth, canvasHeight) {
 
 /**
  * Paint the map as it is currently shown onto a new canvas.
- * `options`: { scale, background, basemap (bool), filter, view, data, style }
+ * `options`: { scale, background, basemap (bool), filter, view, scene, style }
  */
 async function renderExportCanvas(map, options) {
   const size = map.getSize();
@@ -103,8 +103,8 @@ async function renderExportCanvas(map, options) {
     await waitForTiles(map);
     drawTiles(ctx, map, scale, options.filter);
   }
-  options.view.draw(ctx, frameFromMap(map, scale), options.data, options.style);
-  if (options.view.hasLegend) drawLegend(ctx, scale, options.data, canvas.height);
+  options.view.draw(ctx, frameFromMap(map, scale), options.scene, options.style);
+  if (options.view.hasLegend) drawLegend(ctx, scale, options.scene, canvas.height);
   if (options.basemap) drawAttribution(ctx, scale, canvas.width, canvas.height);
   return canvas;
 }

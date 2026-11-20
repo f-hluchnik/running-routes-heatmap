@@ -22,12 +22,12 @@ function tracePolyline(ctx, route, from, to) {
 const glowView = {
   label: "Glow",
   usesOpacity: true,
-  draw(ctx, frame, data, style) {
+  draw(ctx, frame, scene, style) {
     ctx.lineJoin = "round";
     ctx.lineCap = "round";
     ctx.lineWidth = lineWidth(style, frame);
     ctx.strokeStyle = `rgba(${GLOW_COLOUR}, ${style.opacity})`;
-    for (const route of data.routes) {
+    for (const route of scene.routes) {
       projectRoute(route, frame);
       ctx.beginPath();
       tracePolyline(ctx, route, 0, route.x.length - 1);
@@ -48,11 +48,11 @@ const frequencyView = {
   label: "Frequency",
   usesOpacity: false,
   hasLegend: true,
-  draw(ctx, frame, data, style) {
-    for (const route of data.routes) projectRoute(route, frame);
+  draw(ctx, frame, scene, style) {
+    for (const route of scene.routes) projectRoute(route, frame);
     ctx.lineJoin = "round";
     const width = lineWidth(style, frame);
-    for (const { frequency, spans } of data.levels) {
+    for (const { frequency, spans } of scene.levels) {
       ctx.beginPath();
       for (const { route, from, to } of spans) tracePolyline(ctx, route, from, to);
       // Butt caps on the edge: round ones leave dark dots where the colour changes.
@@ -62,7 +62,7 @@ const frequencyView = {
       ctx.stroke();
       ctx.lineCap = "round";
       ctx.lineWidth = width;
-      ctx.strokeStyle = frequencyColour(frequency, data.maxFrequency);
+      ctx.strokeStyle = frequencyColour(frequency, scene.maxFrequency);
       ctx.stroke();
     }
   },

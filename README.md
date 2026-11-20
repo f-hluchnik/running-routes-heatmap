@@ -56,15 +56,15 @@ They stay in the git history; use `git filter-repo` if you need them gone from t
 ## How it works
 
 ```
-GPX files ─► gpx_io ─► geometry ─► frequency ─► dataset (JSON) ─► page (HTML + Leaflet + JS)
+GPX/FIT files ─► loading ─► geometry ─► dataset (JSON) ─► page (HTML + Leaflet + JS)
 ```
 
-Python parses and cleans the tracks and counts, for each stretch, how many runs passed nearby. The browser draws everything on one canvas, so the same code produces the screen and the PNG. Details and design decisions are recorded per ticket in [`docs/tickets/`](docs/tickets/README.md).
+Python parses and cleans the tracks. The browser counts, for each stretch, how many runs passed nearby (so the numbers stay right when runs are filtered) and draws everything on one canvas, so the same code produces the screen and the PNG. Details and design decisions are recorded per ticket in [`docs/tickets/`](docs/tickets/README.md).
 
 ## Development
 
 ```bash
-pytest          # unit tests; browser tests run if Playwright is installed
+pytest          # Python + JavaScript (node) unit tests; browser tests run if Playwright is installed
 ruff check . && ruff format --check .
 
 pip install -e ".[e2e]" && playwright install chromium   # enable the browser tests

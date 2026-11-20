@@ -7,7 +7,6 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .frequency import segment_frequencies
 from .geometry import LocalProjection, clean_path, path_length, trim_ends
 from .model import Run
 
@@ -36,51 +35,41 @@ class Settings:
 
 
 @dataclass(frozen=True)
-class Route:
-    """A continuous stretch of one run with the frequency of each of its segments."""
-
-    coords: np.ndarray  # (n, 2) as (lat, lon)
-    frequency: np.ndarray  # (n - 1,)
-
-
-@dataclass(frozen=True)
 class RunRoutes:
+    """One run: its metadata and the continuous routes (``(n, 2)`` arrays of lat, lon)."""
+
     name: str
     date: str | None
     distance_km: float
-    routes: list[Route]
+    routes: list[np.ndarray]
 
 
 @dataclass(frozen=True)
 class Dataset:
+    """Everything the front-end needs. Frequencies are computed there, so the user can
+    filter runs and still get correct counts for what remains."""
+
     runs: list[RunRoutes]
+    cell_size: float  # metres; two runs closer than this count as the same street
 
     @property
     def bounds(self) -> list[list[float]]:
         """``[[south, west], [north, east]]`` around every route."""
-        points = np.concatenate([route.coords for run in self.runs for route in run.routes])
+        points = np.concatenate([route for run in self.runs for route in run.routes])
         return [points.min(axis=0).tolist(), points.max(axis=0).tolist()]
-
-    @property
-    def max_frequency(self) -> int:
-        return max(int(route.frequency.max()) for run in self.runs for route in run.routes)
 
     def to_json(self) -> str:
         """Serialise compactly; coordinates are rounded to :data:`COORDINATE_DECIMALS`."""
         payload = {
             "bounds": self.bounds,
-            "maxFrequency": self.max_frequency,
+            "cellSize": self.cell_size,
             "runs": [
                 {
                     "name": run.name,
                     "date": run.date,
                     "distanceKm": round(run.distance_km, 1),
                     "routes": [
-                        {
-                            "coords": np.round(route.coords, COORDINATE_DECIMALS).tolist(),
-                            "freq": route.frequency.tolist(),
-                        }
-                        for route in run.routes
+                        np.round(route, COORDINATE_DECIMALS).tolist() for route in run.routes
                     ],
                 }
                 for run in self.runs
@@ -90,7 +79,7 @@ class Dataset:
 
 
 def build_dataset(runs: list[Run], settings: Settings | None = None) -> Dataset:
-    """Clean every run's geometry and annotate each segment with its frequency.
+    """Clean every run's geometry (projected, de-jittered, evenly sampled, trimmed).
 
     Raises ``ValueError`` if no run has any distance left to draw.
     """
@@ -98,21 +87,19 @@ def build_dataset(runs: list[Run], settings: Settings | None = None) -> Dataset:
     projection = LocalProjection.centred_on([s for run in runs for s in run.segments])
     cleaned = [_clean_run(run, projection, settings) for run in runs]
 
-    paths = [path for _, paths in cleaned for path in paths]
-    frequencies = iter(segment_frequencies(paths, cell_size=settings.cell_size))
-
-    run_routes = []
-    for run, (distance, run_paths) in zip(runs, cleaned, strict=True):
-        routes = [
-            Route(coords=projection.inverse(path)[:, ::-1], frequency=next(frequencies))
-            for path in run_paths
-        ]
-        if routes:
-            run_routes.append(RunRoutes(run.name, run.date, distance / 1000, routes))
-
+    run_routes = [
+        RunRoutes(
+            name=run.name,
+            date=run.date,
+            distance_km=distance / 1000,
+            routes=[projection.inverse(path)[:, ::-1] for path in paths],
+        )
+        for run, (distance, paths) in zip(runs, cleaned, strict=True)
+        if paths
+    ]
     if not run_routes:
         raise ValueError("No run has any distance to draw")
-    return Dataset(run_routes)
+    return Dataset(run_routes, settings.cell_size)
 
 
 def _clean_run(

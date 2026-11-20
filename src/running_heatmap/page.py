@@ -15,6 +15,8 @@ _SCRIPTS = (
     "vendor/leaflet.js",
     "projection.js",
     "data.js",
+    "frequency.js",
+    "scene.js",
     "colour.js",
     "views.js",
     "routes-layer.js",

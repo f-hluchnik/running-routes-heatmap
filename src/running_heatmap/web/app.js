@@ -11,6 +11,7 @@ const BASEMAP_FILTER = "grayscale(0.85) brightness(1.05) contrast(0.92)"; // cal
 const state = { view: "glow", basemap: false, width: 3, opacity: 0.5 };
 
 const data = loadDataset(JSON.parse(document.getElementById("heatmap-data").textContent));
+let scene = buildScene(data);
 
 const map = L.map("map", { zoomSnap: 0.25, zoomAnimation: false, attributionControl: false });
 map.fitBounds(data.bounds, { padding: [40, 40] });
@@ -25,7 +26,7 @@ const basemap = L.tileLayer(OSM_TILES.url, {
 
 const routesLayer = new RoutesLayer((ctx, frame) => {
   ctx.clearRect(0, 0, frame.width * frame.scale, frame.height * frame.scale);
-  VIEWS[state.view].draw(ctx, frame, data, state);
+  VIEWS[state.view].draw(ctx, frame, scene, state);
 }).addTo(map);
 
 L.control.attribution({ prefix: false }).addTo(map);
@@ -47,7 +48,7 @@ $("summary").textContent =
   `${data.runs.length} runs · ${data.totalKm.toFixed(1)} km`;
 
 $("legend-bar").style.background = rampGradient();
-$("legend-max").textContent = data.maxFrequency;
+$("legend-max").textContent = scene.maxFrequency;
 $("width").value = state.width;
 $("opacity").value = state.opacity;
 
@@ -102,7 +103,7 @@ $("export").addEventListener("click", async (event) => {
         basemap: state.basemap,
         filter: BASEMAP_FILTER,
         view: VIEWS[state.view],
-        data,
+        scene,
         style: state,
       },
       `running-heatmap-${state.view}${state.basemap ? "-osm" : ""}.png`,

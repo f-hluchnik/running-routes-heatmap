@@ -8,8 +8,6 @@ Ideas that are not scheduled. Roughly in order of value.
    option on the CLI.
 4. **Export options:** resolution choice, whole-dataset extent instead of the
    current viewport, transparent background.
-5. **Count runs, not segments, in frequency analysis** when one GPX file holds
-   several track segments over the same street.
 6. **Run details on hover** (name, date, distance); data is already embedded.
 7. **README screenshot** from sample/trimmed data.
 8. **CI:** GitHub Actions running ruff, pytest and the browser tests.

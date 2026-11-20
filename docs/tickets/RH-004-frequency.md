@@ -1,6 +1,6 @@
 # RH-004 Frequency analysis
 
-**Status:** Done
+**Status:** Done, later moved to the browser (see RH-011)
 
 ## Goal
 For every stretch of every route, know how many *different* runs went there. This
