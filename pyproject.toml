@@ -9,6 +9,7 @@ description = "Turn GPX running tracks into an interactive heatmap with PNG expo
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "fitdecode>=0.10",
     "gpxpy>=1.6",
     "numpy>=1.26",
     "shapely>=2.0",

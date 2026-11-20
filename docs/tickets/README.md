@@ -15,6 +15,7 @@ session or contributor can pick up from here.
 | [RH-007](RH-007-frequency-view.md) | Frequency colour view + legend | Done |
 | [RH-008](RH-008-png-export.md) | PNG export | Done |
 | [RH-009](RH-009-docs.md) | Docs incl. Garmin download guide | Done |
+| [RH-010](RH-010-fit-support.md) | FIT file support + sport filter | Done |
 
 Backlog (not scheduled): see [BACKLOG.md](BACKLOG.md).
 

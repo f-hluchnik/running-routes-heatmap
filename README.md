@@ -15,7 +15,7 @@ The result is a single HTML file that works offline (only the optional basemap t
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 
-# put your .gpx files into data/, then:
+# put your .gpx or .fit files into data/, then:
 running-heatmap --serve
 ```
 
@@ -26,10 +26,11 @@ Serving it (instead of double-clicking the file) is what lets OpenStreetMap tile
 
 | Option | Default | Meaning |
 |--------|---------|---------|
-| `data_dir` | `data` | folder with `.gpx` files |
+| `data_dir` | `data` | folder with `.gpx` and `.fit` files |
 | `-o`, `--output` | `output/heatmap.html` | where to write the page |
 | `--cell-size METRES` | `10` | how close two runs must be to count as the same street; raise it if GPS noise splits one street into two |
 | `--trim-ends METRES` | `0` | hide the start and end of every run, e.g. `--trim-ends 300` to keep your home out of the picture |
+| `--sport NAME` | `running` | only use activities of this sport (`any` for all); applies to `.fit` files, GPX files do not state a sport |
 | `--serve`, `--port` | off, `8000` | serve the page locally and open it |
 
 ## Getting your data from Garmin
@@ -37,7 +38,7 @@ Serving it (instead of double-clicking the file) is what lets OpenStreetMap tile
 Garmin Connect has no one-click "all my runs as GPX" button, so pick one of these:
 
 1. **A few runs (recommended to start).** On <https://connect.garmin.com> in a desktop browser (the mobile app cannot export files): open **Activities**, open a run, click the **gear icon** at the top right and choose **Export to GPX**. Save the file into `data/`.
-2. **Everything at once.** In your Garmin account settings open **Data Management → Export Your Data** and request your data. Garmin emails a download link, typically within 1–2 days. The archive contains your activities in the format they were uploaded, mostly `.fit`, which this project cannot read yet (see [the backlog](docs/tickets/BACKLOG.md)).
+2. **Everything at once.** In your Garmin account settings open **Data Management → Export Your Data** and request your data. Garmin emails a download link, typically within 1–2 days. The archive contains your activities in the format they were uploaded, mostly `.fit`. Unzip the activity archives (`UploadedFiles_*.zip`) into `data/`; `.fit` files are read directly and other sports such as cycling are skipped automatically.
 3. **Bulk GPX with a script.** Community tools such as [`garmin-connect-export`](https://github.com/pe-st/garmin-connect-export) log in with your Garmin account and download all activities as GPX. They are unofficial and may break when Garmin changes its login, so use them at your own risk.
 
 Treadmill and other indoor activities have no GPS track and are skipped automatically.

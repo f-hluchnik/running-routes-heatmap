@@ -1,4 +1,4 @@
-"""Reading GPX files into :class:`~running_heatmap.model.Run` objects."""
+"""Reading a GPX file into a :class:`~running_heatmap.model.Run`."""
 
 from __future__ import annotations
 
@@ -11,26 +11,9 @@ import gpxpy.gpx
 import numpy as np
 from gpxpy.gpx import GPXException
 
-from .model import Run
+from .model import MIN_POINTS_PER_SEGMENT, Run
 
 logger = logging.getLogger(__name__)
-
-MIN_POINTS_PER_SEGMENT = 2
-
-
-def load_runs(directory: Path) -> list[Run]:
-    """Load every ``*.gpx`` file in ``directory`` (sorted by name).
-
-    Files that cannot be parsed or contain no usable track are skipped with a warning.
-    """
-    runs = []
-    for path in sorted(directory.glob("*.gpx")):
-        run = load_run(path)
-        if run is None:
-            logger.warning("Skipping %s: no usable track points", path.name)
-        else:
-            runs.append(run)
-    return runs
 
 
 def load_run(path: Path) -> Run | None:

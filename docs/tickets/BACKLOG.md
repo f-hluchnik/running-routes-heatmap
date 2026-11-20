@@ -2,9 +2,6 @@
 
 Ideas that are not scheduled. Roughly in order of value.
 
-1. **FIT file support.** Garmin's full data export is mostly `.fit`. Add a
-   `fit_io` loader (`fitdecode`) returning the same `Run` model; `load_runs`
-   would pick the loader by file extension.
 2. **Date / run filter in the UI.** Filter by date range or toggle individual
    runs; needs the run index already stored on each route.
 3. **Choice of basemap style** (light/dark, other providers) and a tile URL
