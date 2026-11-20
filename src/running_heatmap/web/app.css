@@ -12,6 +12,8 @@ html, body { height: 100%; margin: 0; }
 #map { height: 100%; background: var(--bg); }
 
 #panel {
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
   position: absolute;
   top: 16px;
   right: 16px;
@@ -105,3 +107,41 @@ legend { padding: 0; margin-bottom: 6px; color: var(--muted); font-size: 11px; t
 #export:disabled { opacity: 0.6; cursor: progress; }
 #status { margin: 6px 0 0; min-height: 1em; color: var(--muted); font-size: 12px; }
 #status.error { color: #ff8787; }
+
+/* Run filter */
+details > summary { cursor: pointer; font-weight: 600; list-style-position: inside; }
+details > summary span { margin-left: 4px; font-weight: 400; color: var(--muted); }
+summary:focus-visible { outline: 2px solid #fff; outline-offset: 2px; border-radius: 4px; }
+.date-range { display: flex; gap: 8px; margin: 10px 0 6px; }
+.date-range label { display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 2px; color: var(--muted); font-size: 11px; }
+.date-range input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 4px 6px;
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  color-scheme: dark;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+}
+.list-actions { display: flex; gap: 12px; margin: 4px 0; }
+button.link { padding: 0; color: var(--accent); font: inherit; font-size: 12px; background: none; border: 0; cursor: pointer; }
+button.link:hover { text-decoration: underline; }
+button.link:focus-visible { outline: 2px solid #fff; outline-offset: 2px; border-radius: 2px; }
+#run-list { margin: 0; padding: 0; max-height: 180px; overflow-y: auto; list-style: none; }
+#run-list label {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+  cursor: pointer;
+}
+#run-list input { margin: 0; accent-color: var(--accent); }
+#run-list .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#run-list .date { color: var(--muted); font-variant-numeric: tabular-nums; }
+#run-list .km { color: var(--muted); font-variant-numeric: tabular-nums; }
+#run-list li.out-of-range { opacity: 0.4; }

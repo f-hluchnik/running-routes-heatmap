@@ -2,8 +2,6 @@
 
 Ideas that are not scheduled. Roughly in order of value.
 
-2. **Date / run filter in the UI.** Filter by date range or toggle individual
-   runs; needs the run index already stored on each route.
 3. **Choice of basemap style** (light/dark, other providers) and a tile URL
    option on the CLI.
 4. **Export options:** resolution choice, whole-dataset extent instead of the

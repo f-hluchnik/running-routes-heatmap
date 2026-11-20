@@ -113,3 +113,29 @@ def test_png_export_is_twice_the_viewport(page, tmp_path, basemap):
 
     assert png_size(target) == (VIEWPORT["width"] * 2, VIEWPORT["height"] * 2)
     assert ("-osm" in download.value.suggested_filename) is basemap
+
+
+def test_run_filter_recounts_frequencies_and_updates_the_summary(page):
+    page.click("label:has(input[value=frequency])")
+    assert page.inner_text("#run-count") == "2 of 2"
+    assert page.inner_text("#legend-max") == "2"
+
+    page.uncheck("#run-0")
+
+    assert page.inner_text("#run-count") == "1 of 2"
+    assert page.inner_text("#legend-max") == "1"  # one run left, so nothing is run twice
+
+    page.click("#runs-all")
+    assert page.inner_text("#legend-max") == "2"
+    page.click("#runs-none")
+    assert page.inner_text("#run-count") == "0 of 2"
+    page.wait_for_timeout(100)  # repaint is scheduled on the next animation frame
+    assert painted_pixels(page) == 0
+
+
+def test_date_range_hides_runs_outside_it(page):
+    page.fill("#date-from", "2025-08-12")  # both fixture runs are on 2025-08-11
+    assert page.inner_text("#run-count") == "0 of 2"
+
+    page.fill("#date-from", "2025-08-11")
+    assert page.inner_text("#run-count") == "2 of 2"

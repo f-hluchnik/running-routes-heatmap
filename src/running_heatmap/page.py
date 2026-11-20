@@ -17,6 +17,7 @@ _SCRIPTS = (
     "data.js",
     "frequency.js",
     "scene.js",
+    "run-filter.js",
     "colour.js",
     "views.js",
     "routes-layer.js",

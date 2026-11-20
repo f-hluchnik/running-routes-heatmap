@@ -21,6 +21,19 @@
     <legend>View</legend>
   </fieldset>
 
+  <details id="run-filter" open>
+    <summary>Runs <span id="run-count"></span></summary>
+    <div class="date-range" id="date-range">
+      <label>From <input type="date" id="date-from"></label>
+      <label>To <input type="date" id="date-to"></label>
+    </div>
+    <div class="list-actions">
+      <button type="button" class="link" id="runs-all">All</button>
+      <button type="button" class="link" id="runs-none">None</button>
+    </div>
+    <ul id="run-list"></ul>
+  </details>
+
   <label class="switch">
     <input type="checkbox" id="basemap">
     <span>OpenStreetMap basemap</span>

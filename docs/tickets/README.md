@@ -17,6 +17,7 @@ session or contributor can pick up from here.
 | [RH-009](RH-009-docs.md) | Docs incl. Garmin download guide | Done |
 | [RH-010](RH-010-fit-support.md) | FIT file support + sport filter | Done |
 | [RH-011](RH-011-frequency-in-browser.md) | Frequency analysis in the browser | Done |
+| [RH-012](RH-012-run-filter.md) | Date range and per-run filter | Done |
 
 Backlog (not scheduled): see [BACKLOG.md](BACKLOG.md).
 
