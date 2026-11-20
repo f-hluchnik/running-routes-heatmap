@@ -1,0 +1,37 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "running-heatmap"
+version = "0.1.0"
+description = "Turn GPX running tracks into an interactive heatmap with PNG export."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "gpxpy>=1.6",
+    "numpy>=1.26",
+    "shapely>=2.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6"]
+# Browser tests; also run `playwright install chromium` once.
+e2e = ["playwright>=1.40"]
+
+[project.scripts]
+running-heatmap = "running_heatmap.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/running_heatmap"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
