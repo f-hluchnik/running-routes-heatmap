@@ -1,3 +1,16 @@
-.venv
+# Environments
+.venv/
 .env
 .DS_Store
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Personal GPS data: never commit your own tracks (they reveal where you live).
+data/*
+!data/.gitkeep
+
+# Generated maps
+output/*
+!output/.gitkeep
