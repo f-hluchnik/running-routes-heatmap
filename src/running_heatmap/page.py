@@ -23,6 +23,7 @@ _SCRIPTS = (
     "colour.js",
     "views.js",
     "routes-layer.js",
+    "tile-renderer.js",
     "png-export.js",
     "app.js",
 )

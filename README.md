@@ -7,7 +7,7 @@ Turn the GPX files of your runs into an interactive map you can explore and expo
 - **Optional basemap** – none (default), or OpenStreetMap in muted, dark or original colours; bring your own tile provider with `--tiles`.
 - **Filters** – switch single runs on or off, or limit them to a date range; the frequency colours are recounted for what remains.
 - **Hover details** – point at a route to see which runs (name, date, distance) ran there.
-- **Export PNG** – saves exactly what you see (2x resolution, with legend and the OSM credit if the basemap is on).
+- **Export PNG** – the current view or all shown runs, 1x–4x resolution, optional transparent background; includes the legend and the basemap credit.
 
 The result is a single HTML file that works offline (only the optional basemap tiles need the internet).
 

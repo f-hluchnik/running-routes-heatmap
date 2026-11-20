@@ -11,7 +11,15 @@ const BACKGROUND = "#14161a";
 
 const $ = (id) => document.getElementById(id);
 
-const state = { view: "glow", basemap: "none", width: 3, opacity: 0.5 };
+const state = {
+  view: "glow",
+  basemap: "none",
+  width: 3,
+  opacity: 0.5,
+  exportExtent: "view", // "view" (what is on screen) or "all" (fit every shown run)
+  exportScale: 2,
+  exportTransparent: false,
+};
 const dataJson = JSON.parse($("heatmap-data").textContent);
 const data = loadDataset(dataJson);
 const basemaps = buildBasemaps(dataJson.tiles);
@@ -69,6 +77,13 @@ function applyBasemap() {
     crossOrigin: "anonymous", // lets the PNG export read the tiles
   });
   tileLayers[state.basemap].addTo(map);
+}
+
+/** Basemap tiles and a transparent background exclude each other. */
+function syncTransparencyOption() {
+  const hasBasemap = state.basemap !== "none";
+  $("export-transparent").disabled = hasBasemap;
+  $("export-transparent").checked = state.exportTransparent && !hasBasemap;
 }
 
 /* ---- Controls ----------------------------------------------------------- */
@@ -147,7 +162,21 @@ function bindControls() {
   $("basemap").addEventListener("change", (event) => {
     state.basemap = event.target.value;
     applyBasemap();
+    syncTransparencyOption();
+    updateExportSize();
   });
+  $("export-extent").addEventListener("change", (event) => {
+    state.exportExtent = event.target.value;
+  });
+  $("export-scale").value = state.exportScale;
+  $("export-scale").addEventListener("change", (event) => {
+    state.exportScale = Number(event.target.value);
+    updateExportSize();
+  });
+  $("export-transparent").addEventListener("change", (event) => {
+    state.exportTransparent = event.target.checked;
+  });
+  map.on("resize", updateExportSize);
   $("width").addEventListener("input", (event) => {
     state.width = Number(event.target.value);
     refresh();
@@ -217,24 +246,39 @@ map.on("mouseout dragstart zoomstart", hideHover);
 
 /* ---- PNG export --------------------------------------------------------- */
 
+/** The area and resolution the next export will use. */
+function exportFrame() {
+  const size = map.getSize();
+  const scale = cappedScale(state.exportScale, size.x, size.y, MAX_EXPORT_PIXELS);
+  if (state.exportExtent === "all" && scene.bounds) {
+    return frameFittingBounds(scene.bounds, size.x, size.y, scale);
+  }
+  return frameFromMap(map, scale);
+}
+
+function updateExportSize() {
+  const { width, height, scale } = exportFrame();
+  $("export-size").textContent = `${Math.round(width * scale)} \u00d7 ${Math.round(height * scale)} px`;
+}
+
 async function exportCurrentView(event) {
   const button = event.currentTarget;
   button.disabled = true;
-  showStatus("Rendering…");
+  showStatus("Rendering\u2026");
   try {
-    await exportPng(
-      map,
+    const basemap = state.basemap === "none" ? null : basemaps[state.basemap];
+    const failedTiles = await exportPng(
       {
-        scale: EXPORT_SCALE,
-        background: BACKGROUND,
-        basemap: state.basemap === "none" ? null : basemaps[state.basemap],
+        frame: exportFrame(),
+        background: state.exportTransparent && !basemap ? null : BACKGROUND,
+        basemap,
         view: VIEWS[state.view],
         scene,
         style: state,
       },
-      `running-heatmap-${state.view}${state.basemap === "none" ? "" : `-${state.basemap}`}.png`,
+      `running-heatmap-${state.view}${basemap ? `-${state.basemap}` : ""}.png`,
     );
-    showStatus("");
+    showStatus(failedTiles > 0 ? `Saved, but ${failedTiles} map tiles could not be loaded.` : "");
   } catch (error) {
     showStatus(error instanceof ExportError ? error.message : "Export failed.", true);
     if (!(error instanceof ExportError)) console.error(error);
@@ -255,3 +299,4 @@ buildViewSwitcher();
 buildRunFilter();
 bindControls();
 rebuildScene();
+updateExportSize();

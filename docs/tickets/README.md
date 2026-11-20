@@ -20,6 +20,7 @@ session or contributor can pick up from here.
 | [RH-012](RH-012-run-filter.md) | Date range and per-run filter | Done |
 | [RH-013](RH-013-hover-details.md) | Run details on hover | Done |
 | [RH-014](RH-014-basemap-choice.md) | Basemap style choice + CLI tile options | Done |
+| [RH-015](RH-015-export-options.md) | Export options | Done |
 
 Backlog (not scheduled): see [BACKLOG.md](BACKLOG.md).
 

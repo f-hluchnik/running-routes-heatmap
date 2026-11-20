@@ -11,6 +11,7 @@ const route = (runIndex, xs, y = 0) => ({
   runIndex,
   x: Float64Array.from(xs),
   y: new Float64Array(xs.length).fill(y),
+  bounds: { minX: Math.min(...xs), maxX: Math.max(...xs), minY: y, maxY: y },
 });
 const xs = (from, to) => Array.from({ length: (to - from) / 5 + 1 }, (_, i) => from + i * 5);
 
@@ -40,5 +41,19 @@ test("the scene counts only visible runs", () => {
 test("an empty scene has maximum frequency 1 and nothing to draw", () => {
   const scene = buildScene({ cellSize: 10, routes: [route(0, xs(0, 100))] }, () => false);
 
-  assert.deepEqual(scene, { routes: [], levels: [], maxFrequency: 1 });
+  assert.deepEqual(scene, { routes: [], levels: [], maxFrequency: 1, bounds: null });
+});
+
+test("the scene bounds cover the visible routes only", () => {
+  const dataset = {
+    cellSize: 10,
+    routes: [route(0, xs(0, 100), 0), route(1, xs(50, 300), 40), route(2, xs(-500, -400), -9)],
+  };
+
+  assert.deepEqual(buildScene(dataset, (runIndex) => runIndex < 2).bounds, {
+    minX: 0,
+    maxX: 300,
+    minY: 0,
+    maxY: 40,
+  });
 });

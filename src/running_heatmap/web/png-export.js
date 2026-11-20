@@ -1,43 +1,14 @@
 "use strict";
 
 /*
- * Render the current map view to a PNG: background, optional basemap tiles, the
- * active view's routes, legend and attribution. Routes are drawn by the very same
- * view code as on screen, only into a bigger canvas.
+ * Render a frame to a PNG: background, optional basemap tiles, the active view's
+ * routes, legend and attribution. Routes are drawn by the very same view code as
+ * on screen, only into a canvas of the requested size.
  */
 
-const EXPORT_SCALE = 2;
 const MAX_EXPORT_PIXELS = 8192; // longest side; browsers refuse much larger canvases
-const TILE_WAIT_MS = 8000;
 
 class ExportError extends Error {}
-
-/** Resolve once Leaflet has finished loading all visible tiles (or give up). */
-async function waitForTiles(map) {
-  const pending = () => map.getPane("tilePane").querySelectorAll("img.leaflet-tile:not(.leaflet-tile-loaded)");
-  const deadline = performance.now() + TILE_WAIT_MS;
-  while (pending().length > 0 && performance.now() < deadline) {
-    await new Promise((resolve) => setTimeout(resolve, 100));
-  }
-  // Let the fade-in transition finish so tiles are fully opaque.
-  await new Promise((resolve) => setTimeout(resolve, 300));
-}
-
-function drawTiles(ctx, map, scale, filter) {
-  const origin = map.getContainer().getBoundingClientRect();
-  ctx.save();
-  if (filter && "filter" in ctx) ctx.filter = filter;
-  for (const tile of map.getPane("tilePane").querySelectorAll("img.leaflet-tile-loaded")) {
-    const box = tile.getBoundingClientRect();
-    // Round outwards by a pixel so neighbouring tiles never leave hairline gaps.
-    const x = Math.floor((box.left - origin.left) * scale);
-    const y = Math.floor((box.top - origin.top) * scale);
-    const w = Math.ceil((box.right - origin.left) * scale) - x;
-    const h = Math.ceil((box.bottom - origin.top) * scale) - y;
-    ctx.drawImage(tile, x, y, w, h);
-  }
-  ctx.restore();
-}
 
 function drawLegend(ctx, scale, scene, canvasHeight) {
   const width = 180 * scale;
@@ -69,8 +40,7 @@ function drawLegend(ctx, scale, scene, canvasHeight) {
 }
 
 /** Tile providers' licences require this credit wherever their tiles are shown. */
-function drawAttribution(ctx, scale, canvasWidth, canvasHeight) {
-  const text = "© OpenStreetMap contributors";
+function drawAttribution(ctx, text, scale, canvasWidth, canvasHeight) {
   ctx.save();
   ctx.font = `${11 * scale}px system-ui, sans-serif`;
   const padding = 5 * scale;
@@ -85,30 +55,35 @@ function drawAttribution(ctx, scale, canvasWidth, canvasHeight) {
 }
 
 /**
- * Paint the map as it is currently shown onto a new canvas.
- * `options`: { scale, background, basemap (an entry of `basemaps`, or null), view, scene, style }
+ * Paint `options.frame` onto a new canvas.
+ * `options`: { frame, background (CSS colour or null for transparent),
+ *              basemap (an entry of `basemaps`, or null), view, scene, style }
+ * Returns { canvas, failedTiles }.
  */
-async function renderExportCanvas(map, options) {
-  const size = map.getSize();
-  const scale = Math.min(options.scale, MAX_EXPORT_PIXELS / Math.max(size.x, size.y));
+async function renderExportCanvas(options) {
+  const { frame, basemap } = options;
   const canvas = document.createElement("canvas");
-  canvas.width = Math.round(size.x * scale);
-  canvas.height = Math.round(size.y * scale);
+  canvas.width = Math.round(frame.width * frame.scale);
+  canvas.height = Math.round(frame.height * frame.scale);
   const ctx = canvas.getContext("2d");
 
-  ctx.fillStyle = options.background;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  if (options.background) {
+    ctx.fillStyle = options.background;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
 
-  if (options.basemap) {
-    await waitForTiles(map);
-    drawTiles(ctx, map, scale, options.basemap.filter);
+  let failedTiles = 0;
+  if (basemap) {
+    try {
+      failedTiles = await drawTiles(ctx, basemap, frame);
+    } catch (error) {
+      throw error instanceof TileLoadError ? new ExportError(error.message) : error;
+    }
   }
-  options.view.draw(ctx, frameFromMap(map, scale), options.scene, options.style);
-  if (options.view.hasLegend) drawLegend(ctx, scale, options.scene, canvas.height);
-  if (options.basemap) {
-    drawAttribution(ctx, options.basemap.attribution.text, scale, canvas.width, canvas.height);
-  }
-  return canvas;
+  options.view.draw(ctx, frame, options.scene, options.style);
+  if (options.view.hasLegend) drawLegend(ctx, frame.scale, options.scene, canvas.height);
+  if (basemap) drawAttribution(ctx, basemap.attribution.text, frame.scale, canvas.width, canvas.height);
+  return { canvas, failedTiles };
 }
 
 function canvasToBlob(canvas) {
@@ -118,9 +93,9 @@ function canvasToBlob(canvas) {
         (blob) => (blob ? resolve(blob) : reject(new ExportError("The browser could not create the image."))),
         "image/png",
       );
-    } catch (error) {
-      // A canvas containing cross-origin tiles without CORS headers is "tainted".
-      reject(new ExportError("The browser blocked exporting the map tiles. Open the map with --serve or switch the basemap off."));
+    } catch {
+      // A canvas with cross-origin tiles that sent no CORS headers is "tainted".
+      reject(new ExportError("The browser blocked exporting the map tiles: this tile server does not allow it. Switch the basemap off or use another one."));
     }
   });
 }
@@ -134,7 +109,9 @@ function downloadBlob(blob, filename) {
   setTimeout(() => URL.revokeObjectURL(link.href), 1000);
 }
 
-async function exportPng(map, options, filename) {
-  const canvas = await renderExportCanvas(map, options);
+/** Render and download. Returns the number of map tiles that could not be loaded. */
+async function exportPng(options, filename) {
+  const { canvas, failedTiles } = await renderExportCanvas(options);
   downloadBlob(await canvasToBlob(canvas), filename);
+  return failedTiles;
 }

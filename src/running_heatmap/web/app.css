@@ -179,3 +179,9 @@ button.link:focus-visible { outline: 2px solid #fff; outline-offset: 2px; border
   border-radius: 6px;
 }
 .field select:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+#export-options .field { margin-top: 10px; }
+.check { display: flex; align-items: center; gap: 8px; margin-top: 10px; cursor: pointer; }
+.check input { margin: 0; accent-color: var(--accent); }
+.check:has(input:disabled) { opacity: 0.45; cursor: not-allowed; }
+#export-size { margin: 8px 0 0; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }

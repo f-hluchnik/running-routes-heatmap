@@ -22,6 +22,17 @@ function groupSpansByFrequency(routes, frequencies) {
     .map(([frequency, spans]) => ({ frequency, spans }));
 }
 
+/** Box around all `routes` in unit-Mercator coordinates, or `null` if there are none. */
+function boundsOf(routes) {
+  if (routes.length === 0) return null;
+  return {
+    minX: Math.min(...routes.map((route) => route.bounds.minX)),
+    maxX: Math.max(...routes.map((route) => route.bounds.maxX)),
+    minY: Math.min(...routes.map((route) => route.bounds.minY)),
+    maxY: Math.max(...routes.map((route) => route.bounds.maxY)),
+  };
+}
+
 /**
  * What the views draw: the visible routes plus their frequency levels.
  * Frequencies are recomputed for just the visible runs, so the colours always
@@ -32,7 +43,7 @@ function buildScene(dataset, isRunVisible = () => true) {
   const frequencies = computeFrequencies(routes, dataset.cellSize);
   const levels = groupSpansByFrequency(routes, frequencies);
   const maxFrequency = levels.length > 0 ? levels[levels.length - 1].frequency : 1;
-  return { routes, levels, maxFrequency };
+  return { routes, levels, maxFrequency, bounds: boundsOf(routes) };
 }
 
 if (typeof module !== "undefined" && module.exports) {

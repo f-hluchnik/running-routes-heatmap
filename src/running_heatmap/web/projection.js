@@ -20,23 +20,60 @@ function toUnitMercator(lat, lon) {
 }
 
 /**
- * Describe the map's current view as a drawing frame.
- * `scale` multiplies every length, so a frame can render at higher resolution.
+ * A frame for a view centred on (`centerX`, `centerY`) in unit-Mercator coordinates.
+ * `width` and `height` are in CSS pixels; `scale` multiplies every length, so one
+ * frame description can render at higher resolution.
  */
-function frameFromMap(map, scale = 1) {
-  const zoom = map.getZoom();
+function frameFromView({ centerX, centerY, zoom, width, height, scale = 1 }) {
   const worldSize = TILE_SIZE * Math.pow(2, zoom);
-  const topLeft = map.getPixelBounds().min;
-  const size = map.getSize();
   return {
     zoom,
     scale,
     worldSize,
-    left: topLeft.x,
-    top: topLeft.y,
-    width: size.x,
-    height: size.y,
+    left: centerX * worldSize - width / 2,
+    top: centerY * worldSize - height / 2,
+    width,
+    height,
   };
+}
+
+/** Describe the map's current view as a drawing frame. */
+function frameFromMap(map, scale = 1) {
+  const size = map.getSize();
+  const topLeft = map.getPixelBounds().min;
+  const frame = frameFromView({ centerX: 0, centerY: 0, zoom: map.getZoom(), width: size.x, height: size.y, scale });
+  // Use Leaflet's own offset: it is what the tiles are positioned with.
+  return { ...frame, left: topLeft.x, top: topLeft.y };
+}
+
+const FALLBACK_ZOOM = 16; // for a single point, which has no extent to fit
+const MAX_FIT_ZOOM = 19;
+
+/**
+ * The frame that shows `bounds` ({minX, maxX, minY, maxY} in unit-Mercator) as
+ * large as possible inside `width` x `height`, keeping `padding` (a fraction of
+ * each side) free around it.
+ */
+function frameFittingBounds(bounds, width, height, scale = 1, padding = 0.06) {
+  const spanX = bounds.maxX - bounds.minX;
+  const spanY = bounds.maxY - bounds.minY;
+  const fit = Math.min(
+    (width * (1 - 2 * padding)) / (spanX * TILE_SIZE),
+    (height * (1 - 2 * padding)) / (spanY * TILE_SIZE),
+  );
+  return frameFromView({
+    centerX: (bounds.minX + bounds.maxX) / 2,
+    centerY: (bounds.minY + bounds.maxY) / 2,
+    zoom: Number.isFinite(fit) ? Math.min(Math.log2(fit), MAX_FIT_ZOOM) : FALLBACK_ZOOM,
+    width,
+    height,
+    scale,
+  });
+}
+
+/** The largest scale <= `requested` that keeps the longer side within `maxPixels`. */
+function cappedScale(requested, width, height, maxPixels) {
+  return Math.min(requested, maxPixels / Math.max(width, height));
 }
 
 /** Fill the route's screen-space buffers for `frame` (in CSS pixels times `frame.scale`). */
@@ -46,4 +83,8 @@ function projectRoute(route, frame) {
     route.sx[i] = (route.x[i] * worldSize - left) * scale;
     route.sy[i] = (route.y[i] * worldSize - top) * scale;
   }
+}
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { TILE_SIZE, toUnitMercator, frameFromView, frameFittingBounds, cappedScale };
 }
