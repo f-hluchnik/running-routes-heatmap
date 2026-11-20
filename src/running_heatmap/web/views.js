@@ -68,4 +68,29 @@ const frequencyView = {
   },
 };
 
+/**
+ * Pick out one run with a thin white line on a dark halo (hover feedback). The
+ * line is thinner than the route so the underlying colours stay visible.
+ */
+function drawHighlight(ctx, frame, scene, runIndex, style) {
+  const routes = scene.routes.filter((route) => route.runIndex === runIndex);
+  if (routes.length === 0) return;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  const width = lineWidth(style, frame);
+  for (const [colour, lineWidthOfPass] of [
+    ["rgba(0, 0, 0, 0.6)", width + 3 * frame.scale],
+    ["#ffffff", width * 0.6],
+  ]) {
+    ctx.lineWidth = lineWidthOfPass;
+    ctx.strokeStyle = colour;
+    for (const route of routes) {
+      projectRoute(route, frame);
+      ctx.beginPath();
+      tracePolyline(ctx, route, 0, route.x.length - 1);
+      ctx.stroke();
+    }
+  }
+}
+
 const VIEWS = { glow: glowView, frequency: frequencyView };

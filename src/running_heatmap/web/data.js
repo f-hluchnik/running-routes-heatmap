@@ -1,5 +1,19 @@
 "use strict";
 
+/** Axis-aligned box around a route, to skip routes far from a point quickly. */
+class Bounds {
+  constructor(xs, ys) {
+    this.minX = Math.min(...xs);
+    this.maxX = Math.max(...xs);
+    this.minY = Math.min(...ys);
+    this.maxY = Math.max(...ys);
+  }
+
+  contains(x, y, margin = 0) {
+    return x >= this.minX - margin && x <= this.maxX + margin && y >= this.minY - margin && y <= this.maxY + margin;
+  }
+}
+
 /** One continuous stretch of a run, ready for fast drawing. */
 class Route {
   constructor(coords, runIndex) {
@@ -14,6 +28,7 @@ class Route {
       this.x[i] = point.x;
       this.y[i] = point.y;
     });
+    this.bounds = new Bounds(this.x, this.y);
   }
 }
 

@@ -145,3 +145,26 @@ button.link:focus-visible { outline: 2px solid #fff; outline-offset: 2px; border
 #run-list .date { color: var(--muted); font-variant-numeric: tabular-nums; }
 #run-list .km { color: var(--muted); font-variant-numeric: tabular-nums; }
 #run-list li.out-of-range { opacity: 0.4; }
+
+/* Hover tooltip */
+#tooltip {
+  position: absolute;
+  z-index: 1100;
+  max-width: 260px;
+  padding: 8px 10px;
+  box-sizing: border-box;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.4;
+  pointer-events: none;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+#tooltip[hidden] { display: none; }
+#tooltip .run { display: flex; justify-content: space-between; gap: 12px; }
+#tooltip .run + .run { margin-top: 2px; }
+#tooltip .run-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#tooltip .run-meta, #tooltip .more { color: var(--muted); white-space: nowrap; }
+#tooltip .run:first-child .run-name { font-weight: 600; }

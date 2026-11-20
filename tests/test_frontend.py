@@ -139,3 +139,39 @@ def test_date_range_hides_runs_outside_it(page):
 
     page.fill("#date-from", "2025-08-11")
     assert page.inner_text("#run-count") == "2 of 2"
+
+
+def route_screen_point(page) -> tuple[float, float]:
+    """A point on the first run's route, in page coordinates."""
+    return page.evaluate(
+        """() => {
+            const route = data.routes[0];
+            const mid = Math.floor(route.x.length / 2);
+            const frame = frameFromMap(map);
+            const box = map.getContainer().getBoundingClientRect();
+            return [route.x[mid] * frame.worldSize - frame.left + box.left,
+                    route.y[mid] * frame.worldSize - frame.top + box.top];
+        }"""
+    )
+
+
+def test_hovering_a_route_shows_run_details(page):
+    x, y = route_screen_point(page)
+
+    page.mouse.move(x, y)
+
+    tooltip = page.locator("#tooltip")
+    tooltip.wait_for(state="visible")
+    assert "Test run" in tooltip.inner_text()
+    assert "2025-08-11" in tooltip.inner_text()
+    assert "km" in tooltip.inner_text()
+
+
+def test_tooltip_hides_when_the_pointer_leaves_the_route(page):
+    x, y = route_screen_point(page)
+    page.mouse.move(x, y)
+    page.locator("#tooltip").wait_for(state="visible")
+
+    page.mouse.move(x, y + 150)
+
+    assert not page.is_visible("#tooltip")

@@ -7,6 +7,9 @@ const OSM_TILES = {
   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
 };
 
+const HOVER_TOLERANCE_PX = 8; // how close the pointer must be to a route
+const MAX_TOOLTIP_RUNS = 5;
+
 const BACKGROUND = "#14161a";
 const BASEMAP_FILTER = "grayscale(0.85) brightness(1.05) contrast(0.92)"; // calms OSM colours
 
@@ -32,9 +35,12 @@ const basemap = L.tileLayer(OSM_TILES.url, {
   crossOrigin: "anonymous", // lets the PNG export read the tiles
 });
 
+let hoveredRuns = []; // run indexes under the pointer, nearest first; shown on screen only
+
 const routesLayer = new RoutesLayer((ctx, frame) => {
   ctx.clearRect(0, 0, frame.width * frame.scale, frame.height * frame.scale);
   VIEWS[state.view].draw(ctx, frame, scene, state);
+  if (hoveredRuns.length > 0) drawHighlight(ctx, frame, scene, hoveredRuns[0], state);
 }).addTo(map);
 
 /* ---- Keeping the page in sync with the state ----------------------------- */
@@ -146,6 +152,62 @@ function bindControls() {
   });
   $("export").addEventListener("click", exportCurrentView);
 }
+
+/* ---- Hover details ------------------------------------------------------ */
+
+/** List the runs under the pointer and highlight the nearest one on the map. */
+function showHover(event) {
+  const point = map.mouseEventToContainerPoint(event.originalEvent);
+  const { lat, lng } = map.containerPointToLatLng(point);
+  const { x, y } = toUnitMercator(lat, lng);
+  const tolerance = HOVER_TOLERANCE_PX / frameFromMap(map).worldSize;
+  const hits = runsNear(scene.routes, x, y, tolerance);
+
+  const hit = hits.map(({ runIndex }) => runIndex);
+  const changed = hit.length !== hoveredRuns.length || hit.some((runIndex, i) => runIndex !== hoveredRuns[i]);
+  hoveredRuns = hit;
+  if (changed) {
+    routesLayer.redraw();
+    renderTooltip(hits.map(({ runIndex }) => data.runs[runIndex]));
+  }
+  placeTooltip(point);
+}
+
+function hideHover() {
+  if (hoveredRuns.length === 0) return;
+  hoveredRuns = [];
+  $("tooltip").hidden = true;
+  routesLayer.redraw();
+}
+
+function renderTooltip(runs) {
+  const tooltip = $("tooltip");
+  tooltip.replaceChildren();
+  tooltip.hidden = runs.length === 0;
+  const span = (className, text) => Object.assign(document.createElement("span"), { className, textContent: text });
+  for (const run of runs.slice(0, MAX_TOOLTIP_RUNS)) {
+    const row = document.createElement("div");
+    row.className = "run";
+    row.append(span("run-name", run.name), span("run-meta", `${run.date ?? "undated"} · ${run.distanceKm.toFixed(1)} km`));
+    tooltip.append(row);
+  }
+  if (runs.length > MAX_TOOLTIP_RUNS) tooltip.append(span("more", `+ ${runs.length - MAX_TOOLTIP_RUNS} more`));
+}
+
+/** Keep the tooltip beside the pointer, flipping it at the right and bottom edges. */
+function placeTooltip(point) {
+  const tooltip = $("tooltip");
+  if (tooltip.hidden) return;
+  const size = map.getSize();
+  const offset = 14;
+  const left = point.x + offset + tooltip.offsetWidth > size.x ? point.x - offset - tooltip.offsetWidth : point.x + offset;
+  const top = point.y + offset + tooltip.offsetHeight > size.y ? point.y - offset - tooltip.offsetHeight : point.y + offset;
+  tooltip.style.left = `${Math.max(left, 0)}px`;
+  tooltip.style.top = `${Math.max(top, 0)}px`;
+}
+
+map.on("mousemove", showHover);
+map.on("mouseout dragstart zoomstart", hideHover);
 
 /* ---- PNG export --------------------------------------------------------- */
 

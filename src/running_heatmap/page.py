@@ -18,6 +18,7 @@ _SCRIPTS = (
     "frequency.js",
     "scene.js",
     "run-filter.js",
+    "hit-test.js",
     "colour.js",
     "views.js",
     "routes-layer.js",

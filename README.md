@@ -5,6 +5,8 @@ Turn the GPX files of your runs into an interactive map you can explore and expo
 - **Glow view** – every run is a semi-transparent line; streets you run often pile up to solid colour.
 - **Frequency view** – streets coloured by how many *different* runs used them (legend included).
 - **Optional OpenStreetMap basemap** – on or off with one checkbox.
+- **Filters** – switch single runs on or off, or limit them to a date range; the frequency colours are recounted for what remains.
+- **Hover details** – point at a route to see which runs (name, date, distance) ran there.
 - **Export PNG** – saves exactly what you see (2x resolution, with legend and the OSM credit if the basemap is on).
 
 The result is a single HTML file that works offline (only the optional basemap tiles need the internet).
