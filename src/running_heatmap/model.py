@@ -7,6 +7,8 @@ from datetime import datetime
 
 import numpy as np
 
+MIN_POINTS_PER_SEGMENT = 2  # fewer points than this cannot form a line
+
 LonLat = np.ndarray
 """Array of shape ``(n, 2)`` holding ``(longitude, latitude)`` in degrees."""
 
@@ -18,6 +20,7 @@ class Run:
     name: str
     started_at: datetime | None
     segments: tuple[LonLat, ...]
+    sport: str | None = None  # e.g. "running"; ``None`` when the file does not say
 
     @property
     def date(self) -> str | None:

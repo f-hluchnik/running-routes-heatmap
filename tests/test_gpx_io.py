@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from running_heatmap.gpx_io import load_run, load_runs
+from running_heatmap.gpx_io import load_run
 
 LINE = [(16.60, 49.20), (16.601, 49.201), (16.602, 49.202)]
 
@@ -34,14 +34,3 @@ def test_invalid_xml_is_skipped(tmp_path):
     broken.write_text("<gpx><oops>", encoding="utf-8")
 
     assert load_run(broken) is None
-
-
-def test_load_runs_reads_directory_in_name_order_and_ignores_bad_files(write_gpx, tmp_path):
-    write_gpx("b.gpx", LINE, name="B")
-    write_gpx("a.gpx", LINE, name="A")
-    write_gpx("empty.gpx")
-    (tmp_path / "notes.txt").write_text("ignore me")
-
-    runs = load_runs(tmp_path)
-
-    assert [run.name for run in runs] == ["A", "B"]

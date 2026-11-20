@@ -12,11 +12,13 @@ html, body { height: 100%; margin: 0; }
 #map { height: 100%; background: var(--bg); }
 
 #panel {
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
   position: absolute;
   top: 16px;
   right: 16px;
   z-index: 1000;
-  width: 232px;
+  width: 256px;
   box-sizing: border-box;
   padding: 16px;
   display: flex;
@@ -54,8 +56,7 @@ legend { padding: 0; margin-bottom: 6px; color: var(--muted); font-size: 11px; t
 .segmented input:checked + span { background: var(--accent); border-color: var(--accent); color: #fff; }
 .segmented input:focus-visible + span { outline: 2px solid #fff; outline-offset: 2px; }
 
-.switch { display: flex; align-items: center; gap: 8px; cursor: pointer; }
-.switch input, .slider input { accent-color: var(--accent); }
+.slider input { accent-color: var(--accent); }
 
 .slider { display: flex; flex-direction: column; gap: 4px; color: var(--muted); }
 .slider input { width: 100%; margin: 0; }
@@ -105,3 +106,82 @@ legend { padding: 0; margin-bottom: 6px; color: var(--muted); font-size: 11px; t
 #export:disabled { opacity: 0.6; cursor: progress; }
 #status { margin: 6px 0 0; min-height: 1em; color: var(--muted); font-size: 12px; }
 #status.error { color: #ff8787; }
+
+/* Run filter */
+details > summary { cursor: pointer; font-weight: 600; list-style-position: inside; }
+details > summary span { margin-left: 4px; font-weight: 400; color: var(--muted); }
+summary:focus-visible { outline: 2px solid #fff; outline-offset: 2px; border-radius: 4px; }
+.date-range { display: flex; gap: 8px; margin: 10px 0 6px; }
+.date-range label { display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 2px; color: var(--muted); font-size: 11px; }
+.date-range input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 4px 6px;
+  color: var(--text);
+  font: inherit;
+  font-size: 11px;
+  color-scheme: dark;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+}
+.list-actions { display: flex; gap: 12px; margin: 4px 0; }
+button.link { padding: 0; color: var(--accent); font: inherit; font-size: 12px; background: none; border: 0; cursor: pointer; }
+button.link:hover { text-decoration: underline; }
+button.link:focus-visible { outline: 2px solid #fff; outline-offset: 2px; border-radius: 2px; }
+#run-list { margin: 0; padding: 0; max-height: 180px; overflow-y: auto; list-style: none; }
+#run-list label {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+  cursor: pointer;
+}
+#run-list input { margin: 0; accent-color: var(--accent); }
+#run-list .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#run-list .date { color: var(--muted); font-variant-numeric: tabular-nums; }
+#run-list .km { color: var(--muted); font-variant-numeric: tabular-nums; }
+#run-list li.out-of-range { opacity: 0.4; }
+
+/* Hover tooltip */
+#tooltip {
+  position: absolute;
+  z-index: 1100;
+  max-width: 260px;
+  padding: 8px 10px;
+  box-sizing: border-box;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.4;
+  pointer-events: none;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+#tooltip[hidden] { display: none; }
+#tooltip .run { display: flex; justify-content: space-between; gap: 12px; }
+#tooltip .run + .run { margin-top: 2px; }
+#tooltip .run-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#tooltip .run-meta, #tooltip .more { color: var(--muted); white-space: nowrap; }
+#tooltip .run:first-child .run-name { font-weight: 600; }
+
+.field { display: flex; flex-direction: column; gap: 4px; color: var(--muted); }
+.field select {
+  padding: 6px 8px;
+  color: var(--text);
+  font: inherit;
+  color-scheme: dark;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+}
+.field select:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+#export-options .field { margin-top: 10px; }
+.check { display: flex; align-items: center; gap: 8px; margin-top: 10px; cursor: pointer; }
+.check input { margin: 0; accent-color: var(--accent); }
+.check:has(input:disabled) { opacity: 0.45; cursor: not-allowed; }
+#export-size { margin: 8px 0 0; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }

@@ -54,7 +54,7 @@ def test_cli_fails_cleanly_without_data(tmp_path, capsys):
     code = main([str(tmp_path), "-o", str(tmp_path / "map.html")])
 
     assert code == 1
-    assert "No usable .gpx files" in capsys.readouterr().err
+    assert "No usable .gpx or .fit files" in capsys.readouterr().err
 
 
 def test_cli_reports_invalid_options(write_gpx, tmp_path, capsys):
@@ -64,3 +64,14 @@ def test_cli_reports_invalid_options(write_gpx, tmp_path, capsys):
 
     assert code == 1
     assert "No run has any distance" in capsys.readouterr().err
+
+
+def test_cli_filters_by_sport(write_fit, tmp_path, capsys):
+    write_fit("run.fit", TRACK)
+    write_fit("ride.fit", TRACK, sport="cycling")
+
+    assert main([str(tmp_path), "-o", str(tmp_path / "running.html")]) == 0
+    assert "1 runs" in capsys.readouterr().out
+
+    assert main([str(tmp_path), "-o", str(tmp_path / "all.html"), "--sport", "any"]) == 0
+    assert "2 runs" in capsys.readouterr().out
